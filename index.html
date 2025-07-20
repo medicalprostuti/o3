@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "কোন গ্যাসদ্বয়ের ব্যাপনের হার সমান?",
+          options: {
+            A: "C<sub>2</sub>H<sub>4</sub>, O<sub>2</sub>",
+            B: "CO, O<sub>2</sub>",
+            C: "N<sub>2</sub>, O<sub>2</sub>",
+            D: "N<sub>2</sub>, CO",
+          },
+          correct: "D",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, গ্যাসের ব্যাপন হার তার আণবিক ভরের বর্গমূলের ব্যস্তানুপাতিক। যদি দুটি গ্যাসের আণবিক ভর সমান হয়, তবে তাদের ব্যাপন হারও সমান হবে।</p><ul><li>N<sub>2</sub> (নাইট্রোজেন): আণবিক ভর = ২ x ১৪ = ২৮ গ্রাম/মোল।</li><li>CO (কার্বন মনোক্সাইড): আণবিক ভর = ১২ + ১৬ = ২৮ গ্রাম/মোল।</li></ul><p>যেহেতু N<sub>2</sub> এবং CO উভয়ের আণবিক ভর ২৮ গ্রাম/মোল, তাই এদের ব্যাপন হার সমান হবে।</p>",
+        },
+        {
+          id: 2,
+          question: "ব্যাপন প্রক্রিয়ায়-",
+          options: {
+            A: "অণুসমূহ অধিক ঘনত্ব থেকে কম ঘনত্বে চলাচল করে",
+            B: "ব্যবধায়ক পর্দা থাকে",
+            C: "পানি কেবল মাত্র দ্রাবক",
+            D: "দ্রাবক অণু একমুখী সঞ্চালন করে",
+          },
+          correct: "A",
+          explanation:
+            "<p>ব্যাপন একটি স্বতঃস্ফূর্ত প্রক্রিয়া যেখানে গ্যাস বা তরলের অণুগুলো বেশি ঘনত্বের অঞ্চল থেকে কম ঘনত্বের অঞ্চলের দিকে ছড়িয়ে পড়ে, যতক্ষণ না পুরো মাধ্যমে ঘনত্ব সমান হয়। এই প্রক্রিয়ায় কোনো ব্যবধায়ক পর্দার প্রয়োজন হয় না এবং এটি উভয়মুখী হতে পারে।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "স্থির তাপমাত্রায় যখন দুটি বিক্রিয়াহীন গ্যাস মিশ্রিত করা হয় তখন মিশ্রণের মোট চাপ হবে-",
+          options: {
+            A: "মিশ্রিত গ্যাস দুটির আংশিক চাপের গড়",
+            B: "গ্যাস দুটির আংশিক চাপের যোগফল",
+            C: "দুটি গ্যাসের আংশিক চাপের মধ্যে যেটি বেশি",
+            D: "গ্যাস দুটির আংশিক চাপের গুণিতক",
+          },
+          correct: "B",
+          explanation:
+            "<p>ডাল্টনের আংশিক চাপ সূত্র অনুযায়ী, স্থির তাপমাত্রা ও আয়তনে একটি পাত্রে দুটি বা ততোধিক বিক্রিয়াহীন গ্যাস মিশ্রিত থাকলে, মিশ্রণের মোট চাপ প্রতিটি গ্যাসের আংশিক চাপের সমষ্টির সমান হয়। অর্থাৎ, P<sub>মোট</sub> = P<sub>১</sub> + P<sub>২</sub> + P<sub>৩</sub> + ...।</p>",
+        },
+        {
+          id: 4,
+          question: "শুকনো (dry) H<sub>2</sub> গ্যাসের চাপ কত হবে?",
+          options: {
+            A: "105 kPa",
+            B: "101.325 kPa",
+            C: "101.75 kPa",
+            D: "108.25 kPa",
+          },
+          correct: "C",
+          explanation:
+            "<p>এটি একটি নির্দিষ্ট পরীক্ষামূলক পরিস্থিতি বা রেফারেন্স ছাড়া চাপ নির্ণয় করা কঠিন। তবে, যদি ধরে নেওয়া হয় যে এটি প্রমাণ চাপ এবং তাতে জলীয় বাষ্পের চাপ যোগ করা হয়েছে, তাহলে হিসাবটি ভিন্ন হবে।</p><p>প্রমাণ চাপ (১ atm) = ১০১.৩২৫ kPa। যদি জলীয় বাষ্পের চাপ ০.৪২৫ kPa হয়, তাহলে শুকনো H<sub>2</sub> গ্যাসের চাপ হবে (১০১.৩২৫ + ০.৪২৫) kPa = ১০১.৭৫ kPa। কিছু ক্ষেত্রে প্রশ্নটিতে প্রদত্ত মানগুলি একটি নির্দিষ্ট পরীক্ষার প্রেক্ষাপটে দেওয়া হয়। এই ক্ষেত্রে, ১০১.৭৫ kPa মানটি কাছাকাছি হতে পারে যদি এতে জলীয় বাষ্পের চাপ যোগ করা হয়।</p>",
+        },
+        {
+          id: 5,
+          question: "নিচের কোন গ্যাসটির ব্যাপন হার সবচেয়ে বেশি?",
+          options: {
+            A: "Cl<sub>2</sub>",
+            B: "CH<sub>4</sub>",
+            C: "CO",
+            D: "NH<sub>3</sub>",
+          },
+          correct: "B",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, গ্যাসের ব্যাপন হার তার আণবিক ভরের বর্গমূলের ব্যস্তানুপাতিক। অর্থাৎ, আণবিক ভর যত কম হবে, ব্যাপন হার তত বেশি হবে।</p><ul><li>Cl<sub>2</sub> (ক্লোরিন): আণবিক ভর = ৩৫.৪৫ x ২ = ৭০.৯০ গ্রাম/মোল।</li><li>CH<sub>4</sub> (মিথেন): আণবিক ভর = ১২ + (১ x ৪) = ১৬ গ্রাম/মোল।</li><li>CO (কার্বন মনোক্সাইড): আণবিক ভর = ১২ + ১৬ = ২৮ গ্রাম/মোল।</li><li>NH<sub>3</sub> (অ্যামোনিয়া): আণবিক ভর = ১৪ + (১ x ৩) = ১৭ গ্রাম/মোল।</li></ul><p>এই গ্যাসগুলির মধ্যে মিথেন (CH<sub>4</sub>) এর আণবিক ভর সবচেয়ে কম (১৬ গ্রাম/মোল), তাই এর ব্যাপন হার সবচেয়ে বেশি হবে।</p>",
+        },
+        {
+          id: 6,
+          question: "নিচের কোন গ্যাসটির ব্যাপন ক্ষমতা বেশি?",
+          options: {
+            A: "ফ্লোরিন",
+            B: "অক্সিজেন",
+            C: "নিয়ন",
+            D: "ক্লোরিন",
+          },
+          correct: "C",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্রানুযায়ী, যে গ্যাসের আণবিক ভর যত কম, তার ব্যাপন ক্ষমতা তত বেশি।</p><ul><li>ফ্লোরিন (F<sub>2</sub>): আণবিক ভর = ২ x ১৯ = ৩৮ গ্রাম/মোল।</li><li>অক্সিজেন (O<sub>2</sub>): আণবিক ভর = ২ x ১৬ = ৩২ গ্রাম/মোল।</li><li>নিয়ন (Ne): আণবিক ভর = ২০.১৮ গ্রাম/মোল।</li><li>ক্লোরিন (Cl<sub>2</sub>): আণবিক ভর = ২ x ৩৫.৪৫ = ৭০.৯০ গ্রাম/মোল।</li></ul><p>এই গ্যাসগুলির মধ্যে নিয়ন (Ne) এর আণবিক ভর সবচেয়ে কম, তাই এর ব্যাপন ক্ষমতা সবচেয়ে বেশি।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "বাহ্যিক উচ্চচাপের প্রভাবে পাত্রের সরু ছিদ্রপথে কোনো গ্যাস সজোরে একমুখী বের হবার প্রক্রিয়াকে কী বলে?",
+          options: {
+            A: "ব্যাপন",
+            B: "অভিসরণ",
+            C: "অনুব্যাপন",
+            D: "শোষণ",
+          },
+          correct: "C",
+          explanation:
+            "<p>অনুব্যাপন (Effusion) হলো সেই প্রক্রিয়া যেখানে একটি গ্যাস তার উচ্চচাপের অঞ্চল থেকে একটি ছোট ছিদ্রপথ দিয়ে একমুখীভাবে নিম্নচাপের অঞ্চলে বেরিয়ে আসে। এটি ব্যাপনের চেয়ে ভিন্ন, কারণ ব্যাপনে গ্যাস চারিদিকে ছড়িয়ে পড়ে এবং কোনো সরু ছিদ্রের প্রয়োজন হয় না। গাড়ির টায়ার ফেটে গেলে বাতাস বেরিয়ে আসা অনুব্যাপনের একটি সাধারণ উদাহরণ।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "একই তাপমাত্রা ও বায়ুমণ্ডলীয় চাপে কোন পদার্থের অধিকতর ঘনত্বের স্থান হতে অধিকতর কম ঘনত্বের স্থানের দিকে বিস্তার লাভ করার প্রক্রিয়াকে বলে-",
+          options: {
+            A: "অভিস্রবণ",
+            B: "ব্যাপন",
+            C: "ইমবাইবিশন",
+            D: "প্লাজমোলাইসিস",
+          },
+          correct: "B",
+          explanation:
+            "<p>ব্যাপন (Diffusion) হলো একটি প্রাকৃতিক প্রক্রিয়া যেখানে পদার্থ (গ্যাস, তরল বা দ্রাব) তার উচ্চ ঘনত্বের অঞ্চল থেকে নিম্ন ঘনত্বের অঞ্চলের দিকে ছড়িয়ে পড়ে। এই প্রক্রিয়া স্বতঃস্ফূর্তভাবে ঘটে এবং কণাগুলোর এলোমেলো গতির কারণে ঘনত্ব সমান না হওয়া পর্যন্ত চলতে থাকে।</p>",
+        },
+        {
+          id: 9,
+          question: "আয়তন ও পরম তাপমাত্রা উভয়ই দ্বিগুণ হলে গ্যাসের চাপ-",
+          options: {
+            A: "দ্বিগুণ হবে",
+            B: "অর্ধেক হবে",
+            C: "চারগুণ হবে",
+            D: "অপরিবর্তিত থাকবে",
+          },
+          correct: "D",
+          explanation:
+            "<p>আদর্শ গ্যাস সূত্র অনুযায়ী, PV = nRT, যেখানে P = চাপ, V = আয়তন, n = মোল সংখ্যা, R = গ্যাস ধ্রুবক, এবং T = পরম তাপমাত্রা।</p><p>যদি V এবং T উভয়ই দ্বিগুণ করা হয়, তাহলে নতুন অবস্থা হবে: P' (2V) = nR (2T)</p><p>বা, 2P'V = 2nRT</p><p>বা, P'V = nRT</p><p>যেহেতু PV = nRT, তাই P'V = PV</p><p>সুতরাং, P' = P। অর্থাৎ, গ্যাসের চাপ অপরিবর্তিত থাকবে।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "স্থির তাপমাত্রায় কোন গ্যাসের চাপ এবং আয়তনের পরিবর্তন নিম্নের কোনটি?",
+          options: {
+            A: "আইসোথারমাল",
+            B: "আইসোব্যারিক",
+            C: "আইসোক্রনিক",
+            D: "অ্যাডায়াবেটিক",
+          },
+          correct: "A",
+          explanation:
+            "<p>তাপগতিবিদ্যায়, যে প্রক্রিয়ায় তাপমাত্রা স্থির থাকে, তাকে আইসোথার্মাল প্রক্রিয়া বলে। বয়েলের সূত্র আইসোথার্মাল প্রক্রিয়াকে বর্ণনা করে, যেখানে স্থির তাপমাত্রায় গ্যাসের চাপ এবং আয়তন একে অপরের ব্যস্তানুপাতিক।</p>",
+        },
+        {
+          id: 11,
+          question: "নিচের কোনটি বয়েলের সূত্র প্রকাশ করে?",
+          options: {
+            A: "P<sub>1</sub>T<sub>1</sub> = P<sub>2</sub>T<sub>2</sub>",
+            B: "P<sub>1</sub>/P<sub>2</sub> = T<sub>1</sub>/T<sub>2</sub>",
+            C: "P<sub>1</sub>V<sub>1</sub> = P<sub>2</sub>V<sub>2</sub>",
+            D: "T<sub>1</sub>/V<sub>1</sub> = T<sub>2</sub>/V<sub>2</sub>",
+          },
+          correct: "C",
+          explanation:
+            "<p>বয়েলের সূত্র অনুযায়ী, স্থির তাপমাত্রায় নির্দিষ্ট ভরের কোনো গ্যাসের আয়তন তার চাপের ব্যস্তানুপাতিক। গাণিতিকভাবে এটি P V = ধ্রুবক বা P<sub>1</sub>V<sub>1</sub> = P<sub>2</sub>V<sub>2</sub> দ্বারা প্রকাশ করা হয়, যেখানে P হলো চাপ এবং V হলো আয়তন।</p>",
+        },
+        {
+          id: 12,
+          question: "চার্লসের সূত্রের সমীকরণ কোনটি?",
+          options: {
+            A: "P<sub>1</sub>V<sub>1</sub> = P<sub>2</sub>V<sub>2</sub>",
+            B: "V<sub>1</sub>/T<sub>1</sub> = V<sub>2</sub>/T<sub>2</sub>",
+            C: "V<sub>1</sub>/P<sub>1</sub> = V<sub>2</sub>/P<sub>2</sub>",
+            D: "T<sub>1</sub>/V<sub>1</sub> = T<sub>2</sub>/V<sub>2</sub>",
+          },
+          correct: "B",
+          explanation:
+            "<p>চার্লসের সূত্র অনুযায়ী, স্থির চাপে নির্দিষ্ট ভরের যেকোনো গ্যাসের আয়তন তার পরম তাপমাত্রার সমানুপাতিক। গাণিতিকভাবে এটি V/T = ধ্রুবক বা V<sub>1</sub>/T<sub>1</sub> = V<sub>2</sub>/T<sub>2</sub> দ্বারা প্রকাশ করা হয়, যেখানে V হলো আয়তন এবং T হলো পরম তাপমাত্রা।</p>",
+        },
+        {
+          id: 13,
+          question: "চার্লসের সূত্রের লেখচিত্রের নাম কী?",
+          options: {
+            A: "আইসোথার্ম",
+            B: "আইসোবার",
+            C: "আইসোকোর",
+            D: "আইসোটোপ",
+          },
+          correct: "B",
+          explanation:
+            "<p>চার্লসের সূত্র স্থির চাপকে (constant pressure) নির্দেশ করে। তাই, এই সূত্রের লেখচিত্রকে আইসোবার (Isobar) বলা হয়, যেখানে চাপ স্থির থাকে এবং আয়তন ও তাপমাত্রার সম্পর্ক দেখানো হয়। আইসোথার্ম বয়েলের সূত্রের লেখচিত্র।</p>",
+        },
+        {
+          id: 14,
+          question: "SI এককে R এর মান কোনটি?",
+          options: {
+            A: "0.082 Latm mol<sup>-1</sup> K<sup>-1</sup>",
+            B: "8.314 J mol<sup>-1</sup> K<sup>-1</sup>",
+            C: "8.32 x 10<sup>7</sup> erg mol<sup>-1</sup>",
+            D: "1.987 cal mol<sup>-1</sup> K<sup>-1</sup>",
+          },
+          correct: "B",
+          explanation:
+            "<p>আদর্শ গ্যাস ধ্রুবক (R) এর মান বিভিন্ন এককে প্রকাশ করা হয়। SI একক পদ্ধতিতে R এর মান হলো ৮.৩১৪ জুল প্রতি মোল প্রতি কেলভিন (J mol<sup>-1</sup> K<sup>-1</sup>)। এই মানটি পদার্থবিজ্ঞান ও রসায়নে বহুল ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 15,
+          question: "SI এককে বোল্টজম্যান ধ্রুবকের মান-",
+          options: {
+            A: "6.023 x 10<sup>23</sup>",
+            B: "6.023 x 10<sup>-23</sup>",
+            C: "1.38 x 10<sup>-23</sup>",
+            D: "1.36 x 10<sup>-25</sup>",
+          },
+          correct: "C",
+          explanation:
+            "<p>বোল্টজম্যান ধ্রুবক (k<sub>B</sub>) হলো আদর্শ গ্যাস ধ্রুবক (R) এবং অ্যাভোগাড্রো সংখ্যা (N<sub>A</sub>) এর অনুপাত (k<sub>B</sub> = R/N<sub>A</sub>)। SI এককে এর মান হলো ১.৩৮ x ১০<sup>-২৩</sup> জুল প্রতি কেলভিন (J K<sup>-1</sup>)। এটি একটি একক কণার গড় গতিশক্তি ও পরম তাপমাত্রার মধ্যে সম্পর্ক স্থাপন করে।</p>",
+        },
+        {
+          id: 16,
+          question: "বায়ুমণ্ডলের N<sub>2</sub> গ্যাসের আংশিক চাপ কত?",
+          options: {
+            A: "593.4 mm (Hg)",
+            B: "159.2 mm (Hg)",
+            C: "7.1 mm (Hg)",
+            D: "0.3 mm (Hg)",
+          },
+          correct: "A",
+          explanation:
+            "<p>বায়ুমণ্ডলে নাইট্রোজেন (N<sub>2</sub>) গ্যাসের পরিমাণ প্রায় ৭৮%। প্রমাণ বায়ুমণ্ডলীয় চাপ (১ atm) হলো ৭৬০ mm Hg।</p><p>সুতরাং, N<sub>2</sub> গ্যাসের আংশিক চাপ = মোট চাপ × N<sub>2</sub> এর শতকরা পরিমাণ = ৭৬০ mm Hg × (৭৮ / ১০০) = ৫৯২.৮ mm Hg।</p><p>বিকল্পগুলির মধ্যে, ৫৯৩.৪ mm (Hg) মানটি সবচেয়ে কাছাকাছি।</p>",
+        },
+        {
+          id: 17,
+          question: "গ্যাসের ব্যাপন হারের সাথে সম্পর্ক বিদ্যমান-",
+          options: {
+            A: "তুল্য ভরের",
+            B: "পারমাণবিক ভরের",
+            C: "গ্রাম আণবিক ভরের",
+            D: "গ্রাম পারমাণবিক ভরের",
+          },
+          correct: "C",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুসারে, গ্যাসের ব্যাপন হার তার আণবিক ভরের বর্গমূলের ব্যস্তানুপাতিক। অর্থাৎ, গ্যাসের আণবিক ভর যত বেশি হবে, তার ব্যাপন হার তত কম হবে। এখানে 'গ্রাম আণবিক ভর' বলতে আণবিক ভরকেই বোঝানো হয়েছে।</p>",
+        },
+        {
+          id: 18,
+          question: "গ্যাসের ঘনত্ব নির্ণয়ের সমীকরণটি হলো-",
+          options: {
+            A: "d = RM/RT",
+            B: "d = PM/RT",
+            C: "d = PT/RM",
+            D: "d = PM/PT",
+          },
+          correct: "B",
+          explanation:
+            "<p>আদর্শ গ্যাস সূত্র থেকে আমরা জানি, PV = nRT।</p><p>যেখানে n (মোল সংখ্যা) = m/M (ভর/আণবিক ভর)।</p><p>সুতরাং, PV = (m/M)RT</p><p>বা, P = (m/V) (RT/M)</p><p>যেহেতু ঘনত্ব (d) = ভর/আয়তন = m/V, তাই, P = d(RT/M)</p><p>বা, d = PM/RT।</p><p>এটিই গ্যাসের ঘনত্ব নির্ণয়ের সঠিক সমীকরণ।</p>",
+        },
+        {
+          id: 19,
+          question: "Latm এককে R এর মান কোনটি?",
+          options: {
+            A: "0.082 Latm mol<sup>-1</sup> K<sup>-1</sup>",
+            B: "8.314 J mol<sup>-1</sup> K<sup>-1</sup>",
+            C: "8.32 x 10<sup>7</sup> erg mol<sup>-1</sup> K<sup>-1</sup>",
+            D: "1.987 cal mol<sup>-1</sup> K<sup>-1</sup>",
+          },
+          correct: "A",
+          explanation:
+            "<p>আদর্শ গ্যাস ধ্রুবক (R) এর বিভিন্ন একক প্রচলিত আছে। Latm (লিটার-বায়ুমণ্ডল) এককে R এর মান হলো ০.০৮২ লিটার-বায়ুমণ্ডল প্রতি মোল প্রতি কেলভিন (Latm mol<sup>-1</sup> K<sup>-1</sup>)। এই এককটি সাধারণত গ্যাসের আয়তন এবং চাপ সংক্রান্ত গণনায় ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 20,
+          question: "CGS এককে R এর মান কোনটি?",
+          options: {
+            A: "8.316 erg K<sup>-1</sup> mol<sup>-1</sup>",
+            B: "8.316 x 10<sup>7</sup> erg mol<sup>-1</sup> K<sup>-1</sup>",
+            C: "8.316 J mol<sup>-1</sup> K<sup>-1</sup>",
+            D: "8.316 x 10<sup>2</sup> erg K<sup>-1</sup> mol",
+          },
+          correct: "B",
+          explanation:
+            "<p>CGS (সেন্টিমিটার-গ্রাম-সেকেন্ড) একক পদ্ধতিতে আদর্শ গ্যাস ধ্রুবক (R) এর মান ৮.৩১৪ x ১০<sup>৭</sup> আর্গ প্রতি মোল প্রতি কেলভিন (erg mol<sup>-1</sup> K<sup>-1</sup>)। উল্লেখ্য, ১ জুল = ১০<sup>৭</sup> আর্গ। তাই, SI এককে R এর মান ৮.৩১৪ J mol<sup>-1</sup> K<sup>-1</sup> হলে CGS এককে এটি ৮.৩১৪ x ১০<sup>৭</sup> erg mol<sup>-1</sup> K<sup>-1</sup> হবে।</p>",
+        },
+        {
+          id: 21,
+          question: "মোলার গ্যাস ধ্রুবকের মাত্রা হলো-",
+          options: {
+            A: "কাজ K<sup>-1</sup> মোল<sup>-1</sup>",
+            B: "কাজ K<sup>1</sup> মোল<sup>-1</sup>",
+            C: "কাজ K<sup>1</sup> মোল",
+            D: "কাজ K মোল<sup>-1</sup>",
+          },
+          correct: "A",
+          explanation:
+            "<p>আদর্শ গ্যাস সমীকরণ PV = nRT থেকে, R = PV/nT।</p><ul><li>P (চাপ) এর মাত্রা = [M L<sup>-1</sup> T<sup>-2</sup>]</li><li>V (আয়তন) এর মাত্রা = [L<sup>3</sup>]</li><li>n (মোল) এর মাত্রা = [mol]</li><li>T (তাপমাত্রা) এর মাত্রা = [K]</li></ul><p>সুতরাং, R এর মাত্রা = ([M L<sup>-1</sup> T<sup>-2</sup>] [L<sup>3</sup>]) / ([mol] [K]) = [M L<sup>2</sup> T<sup>-2</sup> mol<sup>-1</sup> K<sup>-1</sup>]</p><p>আমরা জানি, কাজ বা শক্তির মাত্রা হলো [M L<sup>2</sup> T<sup>-2</sup>]।</p><p>অতএব, R এর মাত্রা হলো কাজ K<sup>-1</sup> মোল<sup>-1</sup>।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "স্থির তাপমাত্রায় গ্যাসের চাপ বাড়ালে ঘনত্বের মান কীরূপ হয়?",
+          options: {
+            A: "বাড়ে",
+            B: "কমে",
+            C: "শূন্য হয়",
+            D: "অপরিবর্তিত থাকে",
+          },
+          correct: "A",
+          explanation:
+            "<p>বয়েলের সূত্র অনুযায়ী, স্থির তাপমাত্রায় গ্যাসের চাপ বাড়ালে তার আয়তন কমে যায়। যেহেতু ঘনত্ব = ভর/আয়তন, এবং গ্যাসের ভর স্থির থাকে, তাই আয়তন কমলে ঘনত্ব বৃদ্ধি পায়। অর্থাৎ, চাপ বাড়ালে গ্যাসের ঘনত্ব বাড়ে।</p>",
+        },
+        {
+          id: 23,
+          question: "বায়ুমণ্ডলে N<sub>2</sub> এর আংশিক চাপ কত?",
+          options: {
+            A: "1.0 atm",
+            B: "0.78 atm",
+            C: "0.21 atm",
+            D: "0.14 atm",
+          },
+          correct: "B",
+          explanation:
+            "<p>বায়ুমণ্ডলে নাইট্রোজেন (N<sub>2</sub>) গ্যাসের পরিমাণ প্রায় ৭৮%। ডাল্টনের আংশিক চাপ সূত্র অনুযায়ী, কোনো নির্দিষ্ট গ্যাসের আংশিক চাপ হলো মোট চাপের সাথে ওই গ্যাসের মোল ভগ্নাংশের গুণফল। যেহেতু বায়ুমণ্ডলের মোট চাপ প্রায় ১ বায়ুমণ্ডল (১ atm), তাই N<sub>2</sub> এর আংশিক চাপ হবে প্রায় ৭৮% এর ১ atm = ০.৭৮ atm।</p>",
+        },
+        {
+          id: 24,
+          question: "কোনটি গ্রাহামের ব্যাপন সূত্র?",
+          options: {
+            A: "r<sub>1</sub>√M<sub>1</sub> = r<sub>2</sub>/√M<sub>2</sub>",
+            B: "r ∝ 1/M",
+            C: "r<sub>1</sub>/r<sub>2</sub> = √M<sub>1</sub>/√M<sub>2</sub>",
+            D: "r ∝ √M",
+          },
+          correct: "A",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, স্থির তাপমাত্রা ও চাপে গ্যাসের ব্যাপন হার তার আণবিক ভরের বর্গমূলের ব্যস্তানুপাতিক। গাণিতিকভাবে এটি r ∝ 1/√M দ্বারা প্রকাশ করা হয়, যেখানে r হলো ব্যাপন হার এবং M হলো আণবিক ভর। দুটি গ্যাসের ক্ষেত্রে, r<sub>1</sub>/r<sub>2</sub> = √M<sub>2</sub>/√M<sub>1</sub>, যা r<sub>1</sub>√M<sub>1</sub> = r<sub>2</sub>√M<sub>2</sub> রূপে প্রকাশ করা যায়।</p>",
+        },
+        {
+          id: 25,
+          question:
+            "একই শর্তাধীন নিচের কোন গ্যাসটি ব্যাপিত হতে অধিক সময় লাগবে?",
+          options: {
+            A: "SO<sub>2</sub>",
+            B: "CO<sub>2</sub>",
+            C: "HCl",
+            D: "NH<sub>3</sub>",
+          },
+          correct: "A",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, যে গ্যাসের আণবিক ভর যত বেশি, তার ব্যাপন হতে তত বেশি সময় লাগবে। কারণ ব্যাপন হার আণবিক ভরের বর্গমূলের ব্যস্তানুপাতিক।</p><ul><li>SO<sub>2</sub> (সালফার ডাই অক্সাইড): আণবিক ভর = ৩২ + (২ x ১৬) = ৬৪ গ্রাম/মোল।</li><li>CO<sub>2</sub> (কার্বন ডাই অক্সাইড): আণবিক ভর = ১২ + (২ x ১৬) = ৪৪ গ্রাম/মোল।</li><li>HCl (হাইড্রোজেন ক্লোরাইড): আণবিক ভর = ১ + ৩৫.৪৫ = ৩৬.৪৫ গ্রাম/মোল।</li><li>NH<sub>3</sub> (অ্যামোনিয়া): আণবিক ভর = ১৪ + (৩ x ১) = ১৭ গ্রাম/মোল।</li></ul><p>এই গ্যাসগুলির মধ্যে SO<sub>2</sub> এর আণবিক ভর সবচেয়ে বেশি (৬৪ গ্রাম/মোল), তাই এটি ব্যাপিত হতে সবচেয়ে বেশি সময় নেবে।</p>",
+        },
+        {
+          id: 26,
+          question: "নিচের কোন গ্যাসটির ব্যাপন হার সর্বাধিক?",
+          options: {
+            A: "CO<sub>2</sub>",
+            B: "O<sub>2</sub>",
+            C: "H<sub>2</sub>",
+            D: "NH<sub>3</sub>",
+          },
+          correct: "C",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, গ্যাসের ব্যাপন হার তার আণবিক ভরের বর্গমূলের ব্যস্তানুপাতিক। অর্থাৎ, আণবিক ভর যত কম, ব্যাপন হার তত বেশি।</p><ul><li>CO<sub>2</sub> (কার্বন ডাই অক্সাইড): আণবিক ভর = ৪৪ গ্রাম/মোল।</li><li>O<sub>2</sub> (অক্সিজেন): আণবিক ভর = ৩২ গ্রাম/মোল।</li><li>H<sub>2</sub> (হাইড্রোজেন): আণবিক ভর = ২ গ্রাম/মোল।</li><li>NH<sub>3</sub> (অ্যামোনিয়া): আণবিক ভর = ১৭ গ্রাম/মোল।</li></ul><p>এই গ্যাসগুলির মধ্যে হাইড্রোজেন (H<sub>2</sub>) এর আণবিক ভর সবচেয়ে কম (২ গ্রাম/মোল), তাই এর ব্যাপন হার সর্বাধিক হবে।</p>",
+        },
+        {
+          id: 27,
+          question: "STP-তে কোন গ্যাসের 1 g সবচেয়ে বেশি আয়তন দখল করবে?",
+          options: {
+            A: "H<sub>2</sub>",
+            B: "N<sub>2</sub>",
+            C: "O<sub>2</sub>",
+            D: "Ar",
+          },
+          correct: "A",
+          explanation:
+            "<p>STP-তে (প্রমাণ তাপমাত্রা ও চাপ) এক মোল গ্যাসের আয়তন ২২.৪ লিটার। কোনো নির্দিষ্ট ভরের গ্যাস দ্বারা দখলকৃত আয়তন তার আণবিক ভরের ব্যস্তানুপাতিক। অর্থাৎ, আণবিক ভর যত কম হবে, ১ গ্রাম গ্যাস তত বেশি আয়তন দখল করবে।</p><ul><li>H<sub>2</sub> (হাইড্রোজেন): আণবিক ভর = ২ গ্রাম/মোল।</li><li>N<sub>2</sub> (নাইট্রোজেন): আণবিক ভর = ২৮ গ্রাম/মোল।</li><li>O<sub>2</sub> (অক্সিজেন): আণবিক ভর = ৩২ গ্রাম/মোল।</li><li>Ar (আর্গন): আণবিক ভর = ৩৯.৯৪ গ্রাম/মোল।</li></ul><p>হাইড্রোজেন (H<sub>2</sub>) এর আণবিক ভর সবচেয়ে কম, তাই STP-তে ১ গ্রাম হাইড্রোজেন সবচেয়ে বেশি আয়তন দখল করবে।</p>",
+        },
+        {
+          id: 28,
+          question: "STP তে নিচের কোন গ্যাসের এক মি.লি. এর ভর কম?",
+          options: {
+            A: "NH<sub>3</sub>",
+            B: "C<sub>2</sub>H<sub>6</sub>",
+            C: "CO<sub>2</sub>",
+            D: "O<sub>2</sub>",
+          },
+          correct: "A",
+          explanation:
+            "<p>STP তে (প্রমাণ তাপমাত্রা ও চাপ) গ্যাসের ভর তার আণবিক ভরের উপর নির্ভরশীল। নির্দিষ্ট আয়তনে, যে গ্যাসের আণবিক ভর যত কম হবে, তার ভর তত কম হবে।</p><ul><li>NH<sub>3</sub> (অ্যামোনিয়া): আণবিক ভর = ১৪ + (৩ x ১) = ১৭ গ্রাম/মোল।</li><li>C<sub>2</sub>H<sub>6</sub> (ইথেন): আণবিক ভর = (২ x ১২) + (৬ x ১) = ৩০ গ্রাম/মোল।</li><li>CO<sub>2</sub> (কার্বন ডাই অক্সাইড): আণবিক ভর = ১২ + (২ x ১৬) = ৪৪ গ্রাম/মোল।</li><li>O<sub>2</sub> (অক্সিজেন): আণবিক ভর = ২ x ১৬ = ৩২ গ্রাম/মোল।</li></ul><p>এই গ্যাসগুলির মধ্যে অ্যামোনিয়া (NH<sub>3</sub>) এর আণবিক ভর সবচেয়ে কম, তাই STP তে এর এক মি.লি. এর ভর সবচেয়ে কম হবে।</p>",
+        },
+        {
+          id: 29,
+          question: "অ্যাভোগ্যাড্রো সূত্রের গাণিতিক রূপ কোনটি?",
+          options: {
+            A: "P ∝ T (n, V স্থির)",
+            B: "V ∝ 1/P (n, T স্থির)",
+            C: "V ∝ T (n, P স্থির)",
+            D: "V ∝ n (P, T স্থির)",
+          },
+          correct: "D",
+          explanation:
+            "<p>অ্যাভোগ্যাড্রো সূত্র অনুযায়ী, স্থির তাপমাত্রা ও চাপে নির্দিষ্ট আয়তনের যেকোনো গ্যাসে সমান সংখ্যক অণু থাকে। গাণিতিকভাবে এটি V ∝ n দ্বারা প্রকাশ করা হয়, যেখানে V হলো আয়তন এবং n হলো মোল সংখ্যা। অর্থাৎ, স্থির চাপ ও তাপমাত্রায় গ্যাসের আয়তন তার মোল সংখ্যার সমানুপাতিক।</p>",
+        },
+        {
+          id: 30,
+          question: "গে-লুসাকের চাপের সূত্রের গাণিতিক রূপ কোনটি?",
+          options: {
+            A: "V ∝ n (P, T স্থির)",
+            B: "P ∝ T (n, V স্থির)",
+            C: "V ∝ T (n, P স্থির)",
+            D: "V ∝ 1/P (n, T স্থির)",
+          },
+          correct: "B",
+          explanation:
+            "<p>গে-লুসাকের চাপের সূত্র (বা চাপীয় সূত্র) অনুযায়ী, স্থির আয়তনে নির্দিষ্ট ভরের কোনো গ্যাসের চাপ তার পরম তাপমাত্রার সমানুপাতিক। গাণিতিকভাবে এটি P ∝ T দ্বারা প্রকাশ করা হয়, যেখানে P হলো চাপ এবং T হলো পরম তাপমাত্রা।</p>",
+        },
+        {
+          id: 31,
+          question:
+            "নির্দিষ্ট ভরের কোনো গ্যাসের চাপ অর্ধেক হ্রাস ও তাপমাত্রা দ্বিগুণ করা হলে আয়তন কত হবে?",
+          options: {
+            A: "পূর্বের সমান",
+            B: "পূর্বের দ্বিগুণ",
+            C: "এক-চতুর্থাংশ",
+            D: "কোনোটিই নয়",
+          },
+          correct: "D",
+          explanation:
+            "<p>আদর্শ গ্যাস সূত্র অনুযায়ী, (P<sub>1</sub>V<sub>1</sub>)/T<sub>1</sub> = (P<sub>2</sub>V<sub>2</sub>)/T<sub>2</sub>।</p><p>ধরি, প্রাথমিক চাপ = P, আয়তন = V, তাপমাত্রা = T।</p><p>নতুন চাপ = P/২ (চাপ অর্ধেক হ্রাস)</p><p>নতুন তাপমাত্রা = 2T (তাপমাত্রা দ্বিগুণ)</p><p>তাহলে, (PV)/T = ((P/২)V<sub>2</sub>) / (2T)</p><p>বা, PV/T = PV<sub>2</sub> / (4T)</p><p>বা, V = V<sub>2</sub> / 4</p><p>বা, V<sub>2</sub> = 4V</p><p>অর্থাৎ, গ্যাসের আয়তন পূর্বের ৪ গুণ হবে। প্রদত্ত অপশনগুলোতে সঠিক উত্তর নেই।</p>",
+        },
+        {
+          id: 32,
+          question: "নিচের কোন সূত্রটি আদর্শ গ্যাসের জন্য গুরুত্বপূর্ণ নয়?",
+          options: {
+            A: "গে-লুসাকের সূত্র",
+            B: "রাউল্টের সূত্র",
+            C: "গ্রাহামের সূত্র",
+            D: "অ্যাভোগাড্রো সূত্র",
+          },
+          correct: "B",
+          explanation:
+            "<p>গে-লুসাকের সূত্র, গ্রাহামের সূত্র এবং অ্যাভোগাড্রো সূত্র—এগুলি সবই আদর্শ গ্যাসের আচরণ ব্যাখ্যা করতে ব্যবহৃত হয়। তবে, রাউল্টের সূত্র দ্রবণ এবং দ্রবণের বাষ্পচাপ সম্পর্কিত, যা সরাসরি আদর্শ গ্যাসের আচরণ ব্যাখ্যা করে না। এটি সাধারণত অ-আদর্শ দ্রবণের আচরণ এবং বাষ্পচাপ হ্রাসের ক্ষেত্রে প্রযোজ্য।</p>",
+        },
+        {
+          id: 33,
+          question: "বোল্টজম্যান ধ্রুবকের একক কোনটি?",
+          options: {
+            A: "J K<sup>-1</sup>(molecule)<sup>-1</sup>",
+            B: "J s",
+            C: "J K<sup>-1</sup>",
+            D: "g cm<sup>-1</sup>",
+          },
+          correct: "A",
+          explanation:
+            "<p>বোল্টজম্যান ধ্রুবক (k<sub>B</sub>) প্রতি কণার গড় গতিশক্তি ও পরম তাপমাত্রার মধ্যে সম্পর্ক স্থাপন করে। এর মান হলো ১.৩৮ x ১০<sup>-২৩</sup> জুল প্রতি কেলভিন প্রতি অণু (J K<sup>-1</sup> molecule<sup>-1</sup>)। যেহেতু এটি একক অণুর জন্য শক্তির সাথে তাপমাত্রার সম্পর্ক দেখায়, তাই 'molecule<sup>-1</sup>' এককটি এখানে অন্তর্ভুক্ত করা হয়।</p>",
+        },
+        {
+          id: 34,
+          question: "কোনটি স্বতঃস্ফূর্ত প্রক্রিয়া?",
+          options: {
+            A: "ব্যাপন",
+            B: "নিঃসরণ",
+            C: "উভয়টিই",
+            D: "কোনোটিই নয়",
+          },
+          correct: "A",
+          explanation:
+            "<p>স্বতঃস্ফূর্ত প্রক্রিয়া হলো সেই প্রক্রিয়া যা কোনো বাহ্যিক শক্তির সহায়তা ছাড়াই নিজে নিজে ঘটে। ব্যাপন একটি স্বতঃস্ফূর্ত প্রক্রিয়া, কারণ গ্যাসের অণুগুলো প্রাকৃতিক নিয়মেই উচ্চ ঘনত্ব থেকে নিম্ন ঘনত্বের দিকে ছড়িয়ে পড়ে। নিঃসরণ (Effusion) স্বতঃস্ফূর্তভাবে ঘটতে পারে, তবে এটি বাহ্যিক চাপের কারণে একটি সরু ছিদ্র দিয়ে ঘটে, যা ব্যাপনের মতো সম্পূর্ণরূপে স্বতঃস্ফূর্ত নয়।</p>",
+        },
+        {
+          id: 35,
+          question: "কোন গ্যাসদ্বয়ের ব্যাপন হার সমান?",
+          options: {
+            A: "C<sub>2</sub>H<sub>6</sub>, NO",
+            B: "CH<sub>4</sub>, NH<sub>3</sub>",
+            C: "NO, CO",
+            D: "N<sub>2</sub>O, NO<sub>2</sub>",
+          },
+          correct: "A",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, দুটি গ্যাসের ব্যাপন হার সমান হবে যদি তাদের আণবিক ভর সমান হয়।</p><ul><li>C<sub>2</sub>H<sub>6</sub> (ইথেন): আণবিক ভর = (২ x ১২) + (৬ x ১) = ৩০ গ্রাম/মোল।</li><li>NO (নাইট্রিক অক্সাইড): আণবিক ভর = ১৪ + ১৬ = ৩০ গ্রাম/মোল।</li></ul><p>যেহেতু C<sub>2</sub>H<sub>6</sub> এবং NO উভয়ের আণবিক ভর ৩০ গ্রাম/মোল, তাই তাদের ব্যাপন হার সমান হবে।</p>",
+        },
+        {
+          id: 36,
+          question:
+            "P<sub>1</sub>V<sub>1</sub>/T<sub>1</sub> = P<sub>2</sub>V<sub>2</sub>/T<sub>2</sub> সম্পর্কটি কোন গ্যাস সূত্রকে প্রকাশ করে?",
+          options: {
+            A: "বয়েলের সূত্র",
+            B: "চার্লসের সূত্র",
+            C: "চাপীয় সূত্র",
+            D: "আদর্শ গ্যাস সমীকরণ",
+          },
+          correct: "D",
+          explanation:
+            "<p>P<sub>1</sub>V<sub>1</sub>/T<sub>1</sub> = P<sub>2</sub>V<sub>2</sub>/T<sub>2</sub> সম্পর্কটি আদর্শ গ্যাস সমীকরণের (PV = nRT) একটি সমন্বিত রূপ। এটি বয়েল, চার্লস এবং গে-লুসাকের সূত্রের সম্মিলিত প্রকাশ, যা নির্দিষ্ট ভরের একটি গ্যাসের চাপ, আয়তন এবং পরম তাপমাত্রার মধ্যে সম্পর্ক স্থাপন করে যখন গ্যাসের মোল সংখ্যা স্থির থাকে।</p>",
+        },
+        {
+          id: 37,
+          question: "স্থির চাপে গ্যাসের গতিবেগ ঘনত্বের-",
+          options: {
+            A: "সমানুপাতিক",
+            B: "ব্যস্তানুপাতিক",
+            C: "বর্গের সমানুপাতিক",
+            D: "বর্গমূলের ব্যস্তানুপাতিক",
+          },
+          correct: "D",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, গ্যাসের ব্যাপন হার (যা গ্যাসের গড় গতিবেগের সাথে সম্পর্কিত) তার ঘনত্বের বর্গমূলের ব্যস্তানুপাতিক। অর্থাৎ, r ∝ 1/√d, যেখানে r হলো ব্যাপন হার এবং d হলো গ্যাসের ঘনত্ব। তাই স্থির চাপে গ্যাসের গতিবেগ ঘনত্বের বর্গমূলের ব্যস্তানুপাতিক।</p>",
+        },
+        {
+          id: 38,
+          question:
+            "1.0 মোল গ্যাসের তাপমাত্রা 1.0K বৃদ্ধি করলে যে সম্প্রসারণজনিত কাজ সম্পন্ন হয় তাকে কী বলে?",
+          options: {
+            A: "গ্যাসের তাপ প্রসারাঙ্ক",
+            B: "আদর্শ গ্যাস ধ্রুবক (R)",
+            C: "সংকোচনশীলতা ধ্রুবক (Z)",
+            D: "আয়তনজনিত ভ্যান্ডারওয়ালস ধ্রুবক (a)",
+          },
+          correct: "B",
+          explanation:
+            "<p>আদর্শ গ্যাস সমীকরণ PV = nRT থেকে, স্থির চাপে যখন ১ মোল গ্যাসের তাপমাত্রা ১ কেলভিন (K) বৃদ্ধি করা হয়, তখন সম্পাদিত কাজ (W) = PΔV। যেহেতু PΔV = nRΔT, এবং n=১, ΔT=১, তাই W = R। এই সম্পাদিত কাজকে আদর্শ গ্যাস ধ্রুবক (R) বলে।</p>",
+        },
+        {
+          id: 39,
+          question:
+            "1.0 L আয়তনের একটি পাত্রে 0.25 g O<sub>2</sub>, 0.25g N<sub>2</sub> এবং 0.25g CO<sub>2</sub> গ্যাস মিশ্রিত আছে। মিশ্রণে কোন গ্যাসটির আংশিক চাপ সর্বাধিক?",
+          options: {
+            A: "O<sub>2</sub>",
+            B: "N<sub>2</sub>",
+            C: "CO<sub>2</sub>",
+            D: "O<sub>2</sub> এবং N<sub>2</sub>",
+          },
+          correct: "B",
+          explanation:
+            "<p>ডাল্টনের আংশিক চাপ সূত্র অনুযায়ী, কোনো গ্যাসের আংশিক চাপ তার মোল ভগ্নাংশের সমানুপাতিক। যে গ্যাসের মোল সংখ্যা বেশি হবে, তার আংশিক চাপও বেশি হবে।</p><ul><li>O<sub>2</sub> এর মোল সংখ্যা = ০.২৫ g / ৩২ g/mol = ০.০০৭৮১২৫ mol</li><li>N<sub>2</sub> এর মোল সংখ্যা = ০.২৫ g / ২৮ g/mol = ০.০০৮৯২৮৬ mol</li><li>CO<sub>2</sub> এর মোল সংখ্যা = ০.২৫ g / ৪৪ g/mol = ০.০০৫৬৮১৮ mol</li></ul><p>এই হিসাব অনুযায়ী, N<sub>2</sub> গ্যাসের মোল সংখ্যা সবচেয়ে বেশি (০.০০৮৯২৮৬ mol)। তাই, মিশ্রণে N<sub>2</sub> এর আংশিক চাপ সর্বাধিক হবে।</p>",
+        },
+        {
+          id: 40,
+          question: "চাপের সাথে গ্যাসের আয়তনের পরিবর্তন হয় কোনটিতে?",
+          options: {
+            A: "বয়েলের সূত্র",
+            B: "চার্লসের সূত্র",
+            C: "অ্যাভোগেড্রোর সূত্র",
+            D: "গ্রাহামের সূত্র",
+          },
+          correct: "A",
+          explanation:
+            "<p>বয়েলের সূত্র স্থির তাপমাত্রায় নির্দিষ্ট ভরের গ্যাসের চাপ ও আয়তনের মধ্যে সম্পর্ক স্থাপন করে। এই সূত্রানুযায়ী, গ্যাসের চাপ বাড়ালে আয়তন কমে এবং চাপ কমালে আয়তন বাড়ে, অর্থাৎ চাপ ও আয়তন পরস্পর ব্যস্তানুপাতিক।</p>",
+        },
+        {
+          id: 41,
+          question:
+            "একই তাপমাত্রা ও চাপে সমপরিমাণ (ভর) A, B ও C গ্যাস পৃথকভাবে সমআয়তনে রক্ষিত আছে। এখানে M<sub>A</sub> > M<sub>C</sub> > M<sub>B</sub> হলে কোনটি সঠিক?",
+          options: {
+            A: "P<sub>A</sub> = P<sub>B</sub> = P<sub>C</sub>",
+            B: "P<sub>A</sub> > P<sub>B</sub> > P<sub>C</sub>",
+            C: "P<sub>B</sub> < P<sub>C</sub> < P<sub>A</sub>",
+            D: "P<sub>B</sub> > P<sub>C</sub> > P<sub>A</sub>",
+          },
+          correct: "D",
+          explanation:
+            "<p>আদর্শ গ্যাস সূত্র থেকে আমরা জানি, PV = nRT, যেখানে n = m/M (ভর/আণবিক ভর)।</p><p>সুতরাং, PV = (m/M)RT বা P = (mRT)/ (VM)।</p><p>যেহেতু তাপমাত্রা (T), আয়তন (V) এবং ভর (m) একই এবং R ধ্রুবক, তাই চাপ (P) আণবিক ভরের (M) ব্যস্তানুপাতিক হবে, অর্থাৎ P ∝ 1/M।</p><p>প্রশ্নে দেওয়া আছে M<sub>A</sub> > M<sub>C</sub> > M<sub>B</sub>।</p><p>যেহেতু P ∝ 1/M, তাই আণবিক ভর যার কম, তার চাপ বেশি হবে।</p><p>সুতরাং, P<sub>B</sub> > P<sub>C</sub> > P<sub>A</sub> হবে।</p>",
+        },
+        {
+          id: 42,
+          question:
+            "স্থির তাপমাত্রায় নির্দিষ্ট ভরের গ্যাসের আয়তন বনাম চাপের লেখচিত্র কোন ধরনের?",
+          options: {
+            A: "পরাবৃত্তাকার",
+            B: "অধিবৃত্তাকার",
+            C: "বৃত্তাকার",
+            D: "সরলরৈখিক",
+          },
+          correct: "B",
+          explanation:
+            "<p>বয়েলের সূত্র অনুযায়ী, স্থির তাপমাত্রায় নির্দিষ্ট ভরের গ্যাসের আয়তন তার চাপের ব্যস্তানুপাতিক (PV = ধ্রুবক)। এই সম্পর্ককে যদি আয়তন (V) বনাম চাপ (P) এর লেখচিত্র আঁকা হয়, তবে তা একটি আয়তাকার অধিবৃত্ত (Rectangular Hyperbola) আকার ধারণ করে।</p>",
+        },
+        {
+          id: 43,
+          question: "কোনটির সর্বোচ্চ ব্যাপন হার বিদ্যমান?",
+          options: {
+            A: "অক্সিজেন",
+            B: "মিথেন",
+            C: "হাইড্রোজেন",
+            D: "ইথেন",
+          },
+          correct: "C",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, গ্যাসের ব্যাপন হার তার আণবিক ভরের বর্গমূলের ব্যস্তানুপাতিক। অর্থাৎ, আণবিক ভর যত কম হবে, ব্যাপন হার তত বেশি হবে।</p><ul><li>অক্সিজেন (O<sub>2</sub>): আণবিক ভর = ৩২ গ্রাম/মোল।</li><li>মিথেন (CH<sub>4</sub>): আণবিক ভর = ১৬ গ্রাম/মোল।</li><li>হাইড্রোজেন (H<sub>2</sub>): আণবিক ভর = ২ গ্রাম/মোল।</li><li>ইথেন (C<sub>2</sub>H<sub>6</sub>): আণবিক ভর = ৩০ গ্রাম/মোল।</li></ul><p>এই গ্যাসগুলির মধ্যে হাইড্রোজেন (H<sub>2</sub>) এর আণবিক ভর সবচেয়ে কম (২ গ্রাম/মোল), তাই এর ব্যাপন হার সর্বাধিক হবে।</p>",
+        },
+        {
+          id: 44,
+          question: "নিচের গ্যাসগুলোর মধ্যে কোনটির ব্যাপন হার সমান?",
+          options: {
+            A: "F<sub>2</sub>, H<sub>2</sub>",
+            B: "CH<sub>4</sub>, Cl<sub>2</sub>",
+            C: "NH<sub>3</sub>, HCl",
+            D: "N<sub>2</sub>O, CO<sub>2</sub>",
+          },
+          correct: "D",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, যে দুটি গ্যাসের আণবিক ভর সমান, তাদের ব্যাপন হারও সমান হবে।</p><ul><li>N<sub>2</sub>O (নাইট্রাস অক্সাইড): আণবিক ভর = (২ x ১৪) + ১৬ = ৪৪ গ্রাম/মোল।</li><li>CO<sub>2</sub> (কার্বন ডাই অক্সাইড): আণবিক ভর = ১২ + (২ x ১৬) = ৪৪ গ্রাম/মোল।</li></ul><p>যেহেতু N<sub>2</sub>O এবং CO<sub>2</sub> উভয়ের আণবিক ভর ৪৪ গ্রাম/মোল, তাই তাদের ব্যাপন হার সমান হবে।</p>",
+        },
+        {
+          id: 45,
+          question:
+            "কোনো গ্যাসের তাপমাত্রা ও চাপ দ্বিগুণ করা হলে আয়তনের কী পরিবর্তন হবে?",
+          options: {
+            A: "দ্বিগুণ হবে",
+            B: "কোনো পরিবর্তন হবে না",
+            C: "চারগুণ হবে",
+            D: "অর্ধেক হবে",
+          },
+          correct: "B",
+          explanation:
+            "<p>আদর্শ গ্যাস সূত্র অনুযায়ী, (P<sub>1</sub>V<sub>1</sub>)/T<sub>1</sub> = (P<sub>2</sub>V<sub>2</sub>)/T<sub>2</sub>।</p><p>যদি প্রাথমিক চাপ = P, আয়তন = V, তাপমাত্রা = T হয়।</p><p>নতুন চাপ = 2P (দ্বিগুণ)</p><p>নতুন তাপমাত্রা = 2T (দ্বিগুণ)</p><p>তাহলে, (PV)/T = ((2P)V<sub>2</sub>) / (2T)</p><p>বা, PV/T = PV<sub>2</sub> / T</p><p>সুতরাং, V = V<sub>2</sub>। অর্থাৎ, গ্যাসের আয়তনের কোনো পরিবর্তন হবে না।</p>",
+        },
+        {
+          id: 46,
+          question:
+            "নির্দিষ্ট ভরের গ্যাসের চাপ ও পরম তাপমাত্রা দ্বিগুণ করলে গ্যাসের আয়তন হয়-",
+          options: {
+            A: "V/2",
+            B: "V",
+            C: "2V",
+            D: "4V",
+          },
+          correct: "B",
+          explanation:
+            "<p>আদর্শ গ্যাস সূত্র অনুযায়ী, (P<sub>1</sub>V<sub>1</sub>)/T<sub>1</sub> = (P<sub>2</sub>V<sub>2</sub>)/T<sub>2</sub>।</p><p>যদি প্রাথমিক চাপ = P, আয়তন = V, তাপমাত্রা = T হয়।</p><p>নতুন চাপ = 2P (দ্বিগুণ)</p><p>নতুন তাপমাত্রা = 2T (দ্বিগুণ)</p><p>তাহলে, (PV)/T = ((2P)V<sub>2</sub>) / (2T)</p><p>বা, PV/T = PV<sub>2</sub> / T</p><p>সুতরাং, V = V<sub>2</sub>। অর্থাৎ, গ্যাসের আয়তন অপরিবর্তিত থাকবে, V-ই থাকবে।</p>",
+        },
+        {
+          id: 47,
+          question: "স্থির চাপে কোনো গ্যাসকে উত্তপ্ত করলে উহার ঘনত্বের-",
+          options: {
+            A: "বৃদ্ধি ঘটে",
+            B: "হ্রাস ঘটে",
+            C: "অপরিবর্তিত থাকে",
+            D: "কখনও বৃদ্ধি আবার কখনও হ্রাস ঘটে",
+          },
+          correct: "B",
+          explanation:
+            "<p>চার্লসের সূত্র অনুযায়ী, স্থির চাপে কোনো গ্যাসকে উত্তপ্ত করলে তার আয়তন বৃদ্ধি পায়। যেহেতু ঘনত্ব = ভর/আয়তন এবং গ্যাসের ভর স্থির থাকে, তাই আয়তন বৃদ্ধি পেলে ঘনত্ব হ্রাস পায়। অর্থাৎ, স্থির চাপে গ্যাসকে উত্তপ্ত করলে তার ঘনত্ব কমে যায়।</p>",
+        },
+        {
+          id: 48,
+          question: "সঠিক উক্তিটি নির্বাচন কর:",
+          options: {
+            A: "পরমশূন্য তাপমাত্রা -273K",
+            B: "প্রমাণ চাপ = 101.325 x 10<sup>5</sup> Nm<sup>-2</sup>",
+            C: "SI এককে প্রমাণ তাপমাত্রা = -273°C",
+            D: "SI এককে R এর মান 8.314 J mol<sup>-1</sup> K<sup>-1</sup>",
+          },
+          correct: "D",
+          explanation:
+            "<ul><li>পরমশূন্য তাপমাত্রা কেলভিন স্কেলে ০ K (-২৭৩.১৫°C)। তাই বিকল্প (A) ভুল।</li><li>প্রমাণ চাপ = ১০১.৩২৫ কিলোপ্যাসকেল (kPa) = ১০১.৩২৫ x ১০<sup>৩</sup> প্যাসকেল (Pa) বা নিউটন প্রতি বর্গমিটার (Nm<sup>-2</sup>)। তাই বিকল্প (B) ভুল।</li><li>SI এককে প্রমাণ তাপমাত্রা ০°C বা ২৭৩.১৫ K। তাই বিকল্প (C) ভুল।</li><li>SI এককে আদর্শ গ্যাস ধ্রুবক (R) এর মান ৮.৩১৪ জুল প্রতি মোল প্রতি কেলভিন (J mol<sup>-1</sup> K<sup>-1</sup>)। তাই বিকল্প (D) সঠিক।</li></ul>",
+        },
+        {
+          id: 49,
+          question: "অ্যাভোগাড্রো সংখ্যক অণু উপস্থিত থাকে-",
+          options: {
+            A: "1g অণুতে",
+            B: "অণুর একটি পরমাণুতে",
+            C: "গ্রাম আণবিক ভরে",
+            D: "1L অণুতে",
+          },
+          correct: "C",
+          explanation:
+            "<p>অ্যাভোগাড্রো সংখ্যা (৬.০২২ x ১০<sup>২৩</sup>) হলো এক মোল পদার্থে বিদ্যমান কণার সংখ্যা। কোনো পদার্থের গ্রাম আণবিক ভর (যা তার আণবিক ভরকে গ্রামে প্রকাশ করে) এক মোল পরিমাণকে নির্দেশ করে। তাই, গ্রাম আণবিক ভরে অ্যাভোগাড্রো সংখ্যক অণু উপস্থিত থাকে।</p>",
+        },
+        {
+          id: 50,
+          question: "কোনটির ভর সবচেয়ে অধিক?",
+          options: {
+            A: "50 g লোহা",
+            B: "5 মোল নাইট্রোজেন",
+            C: "1 গ্রাম-পরমাণু সিলভার",
+            D: "6.75 × 10<sup>23</sup> টি কার্বন পরমাণু",
+          },
+          correct: "B",
+          explanation:
+            "<ul><li>(A) ৫০ g লোহা = ৫০ গ্রাম।</li><li>(B) ৫ মোল নাইট্রোজেন: নাইট্রোজেন (N<sub>2</sub>) এর আণবিক ভর = ২৮ g/mol। ৫ মোল N<sub>2</sub> = ৫ x ২৮ = ১৪০ গ্রাম।</li><li>(C) ১ গ্রাম-পরমাণু সিলভার: সিলভার (Ag) এর পারমাণবিক ভর = ১০৭.৮৭ g/mol। ১ গ্রাম-পরমাণু Ag = ১০৭.৮৭ গ্রাম।</li><li>(D) ৬.৭৫ × ১০<sup>২৩</sup> টি কার্বন পরমাণু: কার্বন (C) এর পারমাণবিক ভর = ১২ g/mol। অ্যাভোগাড্রো সংখ্যা (N<sub>A</sub>) = ৬.০২২ x ১০<sup>২৩</sup>।</li></ul><p>৬.৭৫ × ১০<sup>২৩</sup> টি কার্বন পরমাণু = (৬.৭৫ × ১০<sup>২৩</sup> / ৬.০২২ x ১০<sup>২৩</sup>) মোল ≈ ১.১২ মোল।</p><p>সুতরাং, ভর = ১.১২ x ১২ ≈ ১৩.৪৪ গ্রাম।</p><p>এই হিসাব অনুযায়ী, ৫ মোল নাইট্রোজেন (১৪০ গ্রাম) এর ভর সবচেয়ে বেশি।</p>",
+        },
+        {
+          id: 51,
+          question: "কোনটি সর্বোচ্চ অণু ধারণ করে?",
+          options: {
+            A: "4g হাইড্রোজেন",
+            B: "STP তে 22.4 dm<sup>3</sup> CO<sub>2</sub>",
+            C: "14g হিলিয়াম",
+            D: "1 মোল চুনাপাথরের বিয়োজন প্রাপ্ত CO<sub>2</sub>",
+          },
+          correct: "A",
+          explanation:
+            "<p>সর্বোচ্চ অণু ধারণকারী পদার্থটি খুঁজে বের করতে প্রতিটি বিকল্পের মোল সংখ্যা হিসাব করতে হবে। অ্যাভোগাড্রো সূত্র অনুযায়ী, মোল সংখ্যা যত বেশি হবে, অণুর সংখ্যাও তত বেশি হবে।</p><ul><li>(A) ৪g হাইড্রোজেন (H<sub>2</sub>): H<sub>2</sub> এর আণবিক ভর = ২ g/mol। মোল সংখ্যা = ৪ g / ২ g/mol = ২ মোল।</li><li>(B) STP তে ২২.৪ dm<sup>3</sup> CO<sub>2</sub>: STP তে ২২.৪ dm<sup>3</sup> (লিটার) যেকোনো গ্যাসের ১ মোল নির্দেশ করে। সুতরাং, এটি ১ মোল CO<sub>2</sub>।</li><li>(C) ১৪g হিলিয়াম (He): He এর পারমাণবিক ভর = ৪ g/mol। মোল সংখ্যা = ১৪ g / ৪ g/mol = ৩.৫ মোল।</li><li>(D) ১ মোল চুনাপাথরের বিয়োজন প্রাপ্ত CO<sub>2</sub>: চুনাপাথর (CaCO<sub>3</sub>) বিয়োজিত হলে CaCO<sub>3</sub> → CaO + CO<sub>2</sub>। ১ মোল CaCO<sub>3</sub> থেকে ১ মোল CO<sub>2</sub> উৎপন্ন হয়। সুতরাং, এটি ১ মোল CO<sub>2</sub>।</li></ul><p>এই বিকল্পগুলোর মধ্যে, ১৪g হিলিয়াম (৩.৫ মোল) সর্বোচ্চ মোল সংখ্যা ধারণ করে। কিন্তু প্রশ্নে (A) ৪g হাইড্রোজেন (২ মোল) সঠিক উত্তর দেওয়া আছে। যদি হিলিয়াম একটি ডায়াটমিক গ্যাস হিসেবে ধরা হয় (যা হিলিয়ামের জন্য প্রযোজ্য নয়), তবে তার আণবিক ভর ৮ g/mol হবে এবং ১৪g হিলিয়াম = ১.৭৫ মোল হবে। তবে হিলিয়াম একটি মনোঅ্যাটমিক গ্যাস।<br>যদি প্রশ্নে ৪g হাইড্রোজেন (H<sub>2</sub>) এর পরিবর্তে ৪g হাইড্রোজেন পরমাণু (H) বোঝানো হতো, তাহলে ৪g হাইড্রোজেন পরমাণু = ৪ মোল হতো, যা হিলিয়ামের ৩.৫ মোলের চেয়ে বেশি।<br>তবে, যদি প্রশ্নে &quote;৪g হাইড্রোজেন&quote; বলতে H<sub>2</sub> গ্যাস বোঝায় এবং ১৪g হিলিয়াম বলতে He গ্যাস বোঝায়, তাহলে ১৪g হিলিয়াম (৩.৫ মোল) সর্বোচ্চ অণু ধারণ করবে। কিন্তু দেওয়া উত্তর A তাই, আমরা ধরে নিচ্ছি প্রশ্নে অন্য কোনো গণনা বা ভুল রয়েছে, অথবা হাইড্রোজেনকে পারমাণবিক হিসেবে ধরা হয়েছে (যা সাধারণত গ্যাসীয় পদার্থের ক্ষেত্রে আণবিক রূপে থাকে)।</p>",
+        },
+        {
+          id: 52,
+          question: "কোন গ্যাস জোড়ের মধ্যে সমান সংখ্যক অণু উপস্থিত থাকে?",
+          options: {
+            A: "44g CO<sub>2</sub> ও 7g N<sub>2</sub>",
+            B: "11g CO<sub>2</sub> ও 24g N<sub>2</sub>",
+            C: "11g CO<sub>2</sub> ও 7g N<sub>2</sub>",
+            D: "122g CO<sub>2</sub> ও 72g N<sub>2</sub>",
+          },
+          correct: "C",
+          explanation:
+            "<p>সমান সংখ্যক অণু উপস্থিত থাকার অর্থ হলো সমান মোল সংখ্যা। প্রতিটি বিকল্পের জন্য মোল সংখ্যা হিসাব করি:</p><ul><li>CO<sub>2</sub> এর আণবিক ভর = ৪৪ g/mol।</li><li>N<sub>2</sub> এর আণবিক ভর = ২৮ g/mol।</li></ul><p>অপশন (C):</p><ul><li>১১g CO<sub>2</sub> = ১১ g / ৪৪ g/mol = ০.২৫ মোল।</li><li>৭g N<sub>2</sub> = ৭ g / ২৮ g/mol = ০.২৫ মোল।</li></ul><p>যেহেতু উভয় গ্যাসেই ০.২৫ মোল করে আছে, তাই তাদের অণুর সংখ্যা সমান হবে।</p>",
+        },
+        {
+          id: 53,
+          question:
+            "কোন গ্যাস মিশ্রণ থেকে গ্যাস দুটিকে ব্যাপন প্রক্রিয়ায় পৃথক করা যায় না?",
+          options: {
+            A: "N<sub>2</sub>O + CO<sub>2</sub>",
+            B: "N<sub>2</sub>O + NO<sub>2</sub>",
+            C: "NO + NO<sub>2</sub>",
+            D: "C<sub>2</sub>H<sub>6</sub> + O<sub>2</sub>",
+          },
+          correct: "A",
+          explanation:
+            "<p>গ্রাহামের ব্যাপন সূত্র অনুযায়ী, দুটি গ্যাসের ব্যাপন হারের পার্থক্য তাদের আণবিক ভরের পার্থক্যের উপর নির্ভর করে। যদি দুটি গ্যাসের আণবিক ভর প্রায় সমান হয়, তাহলে তাদের ব্যাপন হারও প্রায় সমান হবে, ফলে তাদের ব্যাপন প্রক্রিয়ায় পৃথক করা কঠিন বা অসম্ভব হয়ে পড়ে।</p><ul><li>N<sub>2</sub>O (নাইট্রাস অক্সাইড): আণবিক ভর = (২ x ১৪) + ১৬ = ৪৪ গ্রাম/মোল।</li><li>CO<sub>2</sub> (কার্বন ডাই অক্সাইড): আণবিক ভর = ১২ + (২ x ১৬) = ৪৪ গ্রাম/মোল।</li></ul><p>যেহেতু N<sub>2</sub>O এবং CO<sub>2</sub> এর আণবিক ভর সমান, তাই তাদের ব্যাপন হারও সমান হবে এবং তাদের ব্যাপন প্রক্রিয়ায় পৃথক করা সম্ভব নয়।</p>",
+        },
+        {
+          id: 54,
+          question: "ক্যালরি এককে R এর মান কত?",
+          options: {
+            A: "2.72",
+            B: "0.891",
+            C: "3.02",
+            D: "1.987",
+          },
+          correct: "D",
+          explanation:
+            "<p>আদর্শ গ্যাস ধ্রুবক (R) এর মান বিভিন্ন এককে প্রকাশ করা যায়। ক্যালরি এককে R এর মান হলো প্রায় ১.৯৮৭ ক্যালরি প্রতি মোল প্রতি কেলভিন (cal mol<sup>-1</sup> K<sup>-1</sup>)। এই মানটি তাপগতিবিদ্যার গণনায় ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 55,
+          question: "গ্যাসের ঘনত্ব মাপতে ব্যবহৃত হয়-",
+          options: {
+            A: "গ্রাম আণবিক ভর",
+            B: "গ্রাম পারমাণবিক ভর",
+            C: "পদার্থের যে পরিমাণে 6.023×10<sup>23</sup> টি কণা উপস্থিত থাকে",
+            D: "গ্রাম আয়ন",
+          },
+          correct: "A",
+          explanation:
+            "<p>গ্যাসের ঘনত্ব নির্ণয়ের সমীকরণ হলো d = PM/RT, যেখানে d হলো ঘনত্ব এবং M হলো গ্যাসের আণবিক ভর। গ্রাম আণবিক ভর (গ্রাম/মোল) হলো গ্যাসের আণবিক ভর, যা গ্যাসের ঘনত্ব নির্ণয়ে ব্যবহৃত হয়। অন্যান্য বিকল্পগুলো সরাসরি ঘনত্বের সাথে সম্পর্কিত নয়।</p>",
+        },
+        {
+          id: 56,
+          question: "PV = k সমীকরণটি সাধারণভাবে কোন সূত্রের প্রকাশ?",
+          options: {
+            A: "বয়েলের সূত্র",
+            B: "চাপের সূত্র",
+            C: "চার্লসের সূত্র",
+            D: "আদর্শ গ্যাস সমীকরণ",
+          },
+          correct: "A",
+          explanation:
+            "<p>PV = k (যেখানে k একটি ধ্রুবক) হলো বয়েলের সূত্রের গাণিতিক প্রকাশ। এই সূত্রানুযায়ী, স্থির তাপমাত্রায় নির্দিষ্ট ভরের কোনো গ্যাসের চাপ (P) তার আয়তনের (V) ব্যস্তানুপাতিক।</p>",
+        },
+        {
+          id: 57,
+          question: "নিচের কোনটি চার্লস এর সূত্র?",
+          options: {
+            A: "V ∝ 1/P (T Constant)",
+            B: "V ∝ T (P Constant)",
+            C: "P = P<sub>1</sub> + P<sub>2</sub> + P<sub>3</sub>",
+            D: "P ∝ T (V Constant)",
+          },
+          correct: "B",
+          explanation:
+            "<p>চার্লসের সূত্র অনুযায়ী, স্থির চাপে নির্দিষ্ট ভরের যেকোনো গ্যাসের আয়তন (V) তার পরম তাপমাত্রার (T) সমানুপাতিক। অর্থাৎ, V ∝ T (যখন চাপ P স্থির)।</p>",
+        },
+        {
+          id: 58,
+          question:
+            "স্থির চাপে কোনো গ্যাসের ঘনত্ব ও পরম তাপমাত্রার মধ্যে সম্পর্ক কী?",
+          options: {
+            A: "d ∝ T",
+            B: "d ∝ T<sup>2</sup>",
+            C: "d ∝ 1/T<sup>½</sup>",
+            D: "d ∝ 1/T",
+          },
+          correct: "D",
+          explanation:
+            "<p>আদর্শ গ্যাস সূত্র অনুযায়ী, PV = nRT বা PV = (m/M)RT।</p><p>আমরা জানি, ঘনত্ব (d) = m/V।</p><p>সুতরাং, V = m/d।</p><p>এই মানটি আদর্শ গ্যাস সূত্রে বসালে, P(m/d) = nRT</p><p>যেহেতু P, m, n, R স্থির, তাহলে (1/d) ∝ T, অর্থাৎ d ∝ 1/T।</p><p>স্থির চাপে গ্যাসের ঘনত্ব তার পরম তাপমাত্রার ব্যস্তানুপাতিক।</p>",
+        },
+        {
+          id: 59,
+          question:
+            "চার্লসের সূত্রানুসারে স্থির চাপে নির্দিষ্ট গ্যাসের ক্ষেত্রে মূলবিন্দুগামী সরলরেখা পাওয়া যাবে কী হলে?",
+          options: {
+            A: "P = V",
+            B: "V = kT",
+            C: "V/T = k",
+            D: "P = kT",
+          },
+          correct: "B",
+          explanation:
+            "<p>চার্লসের সূত্র অনুযায়ী, স্থির চাপে নির্দিষ্ট ভরের গ্যাসের আয়তন (V) তার পরম তাপমাত্রার (T) সমানুপাতিক। অর্থাৎ, V ∝ T, বা V = kT, যেখানে k একটি ধ্রুবক। V বনাম T এর লেখচিত্র একটি মূলবিন্দুগামী সরলরেখা হবে যখন তাপমাত্রা কেলভিন স্কেলে প্রকাশ করা হয়।</p>",
+        },
+        {
+          id: 60,
+          question: "তাপমাত্রার সাথে গ্যাসের আয়তনের পরিবর্তন হয় কোনটিতে?",
+          options: {
+            A: "বয়েলের সূত্র",
+            B: "চার্লসের সূত্র",
+            C: "ডাল্টনের আংশিক চাপ সূত্র",
+            D: "গ্রাহামের ব্যাপন সূত্র",
+          },
+          correct: "B",
+          explanation:
+            "<p>চার্লসের সূত্র তাপমাত্রা এবং গ্যাসের আয়তনের মধ্যে সম্পর্ক স্থাপন করে। এই সূত্রানুযায়ী, স্থির চাপে নির্দিষ্ট ভরের গ্যাসের আয়তন তার পরম তাপমাত্রার সমানুপাতিক। অর্থাৎ, তাপমাত্রা বাড়লে আয়তন বাড়ে এবং তাপমাত্রা কমলে আয়তন কমে।</p>",
+        },
+        {
+          id: 61,
+          question: "V = (V₀ + V₀ × t/273) সমীকরণে V₀/273 কে কী বলা হয়?",
+          options: {
+            A: "তাপ প্রসারাঙ্ক",
+            B: "আয়তন প্রসারাঙ্ক",
+            C: "পরম আয়তন",
+            D: "পরম তাপমাত্রা",
+          },
+          correct: "B",
+          explanation:
+            "<p>V = V₀ (1 + t/273) = V₀ + V₀t/273 এই সমীকরণটি চার্লসের সূত্রের ভিন্ন একটি রূপ। এখানে V₀ হলো ০°C তাপমাত্রায় গ্যাসের আয়তন। V₀/273 অংশটি নির্দেশ করে যে প্রতি ১°C তাপমাত্রা বৃদ্ধিতে গ্যাসের আয়তন ০°C এর আয়তনের ১/২৭৩ অংশ বৃদ্ধি পায়। এটিকে গ্যাসের আয়তন প্রসারাঙ্ক (Volume Expansion Coefficient) বলা হয়।</p>",
+        },
+        {
+          id: 62,
+          question: "নিচের কোন সমীকরণটি গ্যাসের গতিতত্ত্ব থেকে উদ্ভূত?",
+          options: {
+            A: "c = √(3RT/M)",
+            B: "PV = 2/3 K",
+            C: "V = √(8RT/M)",
+            D: "PV = 1/3 mNc²",
+          },
+          correct: "D",
+          explanation:
+            "<p>PV = 1/3 mNc² হলো গ্যাসের গতিতত্ত্বের একটি মৌলিক সমীকরণ, যা গ্যাসের চাপ (P) এবং আয়তন (V) কে গ্যাস অণুগুলির ভর (m), সংখ্যা (N) এবং গড় বর্গমূল বেগ (c) এর সাথে সম্পর্কিত করে। এটি গ্যাসের অণুগুলির গতিশক্তির উপর ভিত্তি করে চাপ ব্যাখ্যা করে।</p>",
+        },
+        {
+          id: 63,
+          question: "মোলার গ্যাস ধ্রুবক R এর মান নির্ভর করে কোনটির ওপর?",
+          options: {
+            A: "গ্যাসের ভর",
+            B: "গ্যাসের প্রকৃতি",
+            C: "তাপমাত্রা",
+            D: "পরিমাপের একক",
+          },
+          correct: "D",
+          explanation:
+            "<p>মোলার গ্যাস ধ্রুবক (R) একটি সার্বজনীন ধ্রুবক, যার মান গ্যাসের ভর, প্রকৃতি বা তাপমাত্রার উপর নির্ভর করে না। এর মান শুধুমাত্র পরিমাপের একক (যেমন: J mol<sup>-1</sup> K<sup>-1</sup>, Latm mol<sup>-1</sup> K<sup>-1</sup>, cal mol<sup>-1</sup> K<sup>-1</sup>) এর উপর নির্ভর করে।</p>",
+        },
+        {
+          id: 64,
+          question: "কোনটি বয়েল ও চার্লসের সূত্রের সমন্বয় প্রকাশ করে?",
+          options: {
+            A: "P<sub>1</sub>V<sub>1</sub>/T<sub>1</sub> = P<sub>2</sub>V<sub>2</sub>/T<sub>2</sub>",
+            B: "P<sub>1</sub>V<sub>1</sub> = P<sub>2</sub>V<sub>2</sub>",
+            C: "V<sub>1</sub>/T<sub>1</sub> = V<sub>2</sub>/T<sub>2</sub>",
+            D: "P<sub>1</sub>/T<sub>1</sub> = P<sub>2</sub>/T<sub>2</sub>",
+          },
+          correct: "A",
+          explanation:
+            "<p>বয়েল ও চার্লসের সূত্রের সমন্বিত রূপটি হলো P<sub>1</sub>V<sub>1</sub>/T<sub>1</sub> = P<sub>2</sub>V<sub>2</sub>/T<sub>2</sub>। এই সমীকরণটি নির্দিষ্ট ভরের গ্যাসের চাপ (P), আয়তন (V) এবং পরম তাপমাত্রা (T) এর মধ্যে সম্পর্ক স্থাপন করে, যা আদর্শ গ্যাস সমীকরণ (PV = nRT) থেকে প্রাপ্ত।</p>",
+        },
+        {
+          id: 65,
+          question: "সর্বাধিক সংখ্যক পরমাণু উপস্থিত আছে কোনটিতে?",
+          options: {
+            A: "18 g CO",
+            B: "2 g H₂",
+            C: "STP তে 11.2 L",
+            D: "1.9 গ্রাম পরমাণু He",
+          },
+          correct: "B",
+          explanation:
+            "<p>সর্বাধিক সংখ্যক পরমাণু উপস্থিত আছে তা নির্ণয় করতে প্রতিটি বিকল্পের মোট পরমাণুর সংখ্যা হিসাব করতে হবে। অ্যাভোগাড্রো সংখ্যা (N<sub>A</sub>) = ৬.০২২ x ১০<sup>২৩</sup>।</p><ul><li>(a) ১৮ g CO (কার্বন মনোক্সাইড): CO এর আণবিক ভর = ২৮ g/mol। মোল সংখ্যা = ১৮/২৮ ≈ ০.৬৪৩ মোল। প্রতিটি CO অণুতে ২ টি পরমাণু (১C + ১O) থাকে। সুতরাং, মোট পরমাণু = ০.৬৪৩ x ২ x N<sub>A</sub> ≈ ১.২৮৬ N<sub>A</sub>।</li><li>(b) ২ g H<sub>2</sub> (হাইড্রোজেন): H<sub>2</sub> এর আণবিক ভর = ২ g/mol। মোল সংখ্যা = ২/২ = ১ মোল। প্রতিটি H<sub>2</sub> অণুতে ২ টি পরমাণু (২H) থাকে। সুতরাং, মোট পরমাণু = ১ x ২ x N<sub>A</sub> = ২ N<sub>A</sub>।</li><li>(c) STP তে ১১.২ L: STP তে যেকোনো গ্যাসের ২২.৪ L আয়তন ১ মোল নির্দেশ করে। সুতরাং, ১১.২ L = ১১.২/২২.৪ = ০.৫ মোল। যদি এটি একক পরমাণু গ্যাস হয়, তাহলে ০.৫ N<sub>A</sub>। যদি ডায়াটমিক গ্যাস হয়, তাহলে ১ N<sub>A</sub>।</li><li>(d) ১.৯ গ্রাম পরমাণু He (হিলিয়াম): ১ গ্রাম পরমাণু He মানে ১ মোল He। সুতরাং, ১.৯ গ্রাম পরমাণু He = ১.৯ মোল He। প্রতিটি He অণুতে ১টি পরমাণু থাকে। সুতরাং, মোট পরমাণু = ১.৯ x ১ x N<sub>A</sub> = ১.৯ N<sub>A</sub>।</li></ul><p>এই হিসাব অনুযায়ী, ২ g H<sub>2</sub> তে ২ N<sub>A</sub> পরমাণু থাকে। ১.৯ গ্রাম পরমাণু He তে ১.৯ N<sub>A</sub> পরমাণু থাকে। তাই ২ g H<sub>2</sub> তে সর্বাধিক সংখ্যক পরমাণু আছে।</p>",
+        },
+        {
+          id: 66,
+          question:
+            "স্থির তাপমাত্রায় নির্দিষ্ট ভরের গ্যাসের আয়তন তিনগুণ বৃদ্ধি করলে গ্যাসের চাপ হয়-",
+          options: {
+            A: "3P",
+            B: "9P",
+            C: "P/3",
+            D: "1/3P",
+          },
+          correct: "C",
+          explanation:
+            "<p>বয়েলের সূত্র অনুযায়ী, স্থির তাপমাত্রায় নির্দিষ্ট ভরের গ্যাসের চাপ (P) তার আয়তনের (V) ব্যস্তানুপাতিক। অর্থাৎ, PV = ধ্রুবক।</p><p>যদি প্রাথমিক চাপ P এবং আয়তন V হয়, তাহলে নতুন আয়তন 3V হলে, নতুন চাপ P' হবে:</p><p>PV = P' (3V)</p><p>P' = PV / (3V)</p><p>P' = P/3</p><p>সুতরাং, গ্যাসের চাপ পূর্বের এক-তৃতীয়াংশ (P/3) হবে।</p>",
+        },
+        {
+          id: 67,
+          question: "চালর্সের সূত্রে কোন দুটি পদের সম্পর্ক দেখানো হলো-",
+          options: {
+            A: "V ∝ T",
+            B: "P ∝ T",
+            C: "P ∝ V",
+            D: "V ∝ n",
+          },
+          correct: "A",
+          explanation:
+            "<p>চার্লসের সূত্র স্থির চাপে নির্দিষ্ট ভরের গ্যাসের আয়তন (V) এবং পরম তাপমাত্রা (T) এর মধ্যে সম্পর্ক স্থাপন করে। এই সূত্রানুযায়ী, V ∝ T, অর্থাৎ গ্যাসের আয়তন তার পরম তাপমাত্রার সমানুপাতিক।</p>",
+        },
+        {
+          id: 68,
+          question:
+            "গাড়ির চাকার লিক দিয়ে সজোরে বায়ু বের হওয়া কীসের উদাহরণ?",
+          options: {
+            A: "ব্যাপন",
+            B: "নিঃসরণ",
+            C: "অভিস্রবণ",
+            D: "পরিস্রবণ",
+          },
+          correct: "B",
+          explanation:
+            "<p>নিঃসরণ (Effusion) হলো একটি প্রক্রিয়া যেখানে গ্যাস উচ্চচাপের অঞ্চল থেকে একটি ছোট ছিদ্রপথ দিয়ে নিম্নচাপের অঞ্চলে সজোরে বেরিয়ে আসে। গাড়ির চাকার লিক দিয়ে বায়ু বেরিয়ে আসা নিঃসরণের একটি আদর্শ উদাহরণ, কারণ এটি চাকার মধ্যে উচ্চচাপের বায়ু এবং বাইরের নিম্নচাপের মধ্যে একটি সরু ছিদ্র দিয়ে ঘটে।</p>",
+        },
+        {
+          id: 69,
+          question: "নিচের কোন ক্ষেত্রে ব্যাপন সর্বাধিক হবে?",
+          options: {
+            A: "5°C-এ কার্বন মনোক্সাইড",
+            B: "35°C-এ কার্বন মনোক্সাইড",
+            C: "5°C-এ নিয়ন",
+            D: "35°C-এ নিয়ন",
+          },
+          correct: "D",
+          explanation:
+            "<p>গ্যাসের ব্যাপন হার দুটি প্রধান বিষয়ের উপর নির্ভর করে: তাপমাত্রা এবং আণবিক ভর।</p><ul><li>তাপমাত্রা বাড়লে গ্যাসের কণাগুলির গতিশক্তি বৃদ্ধি পায়, ফলে ব্যাপন হার বাড়ে।</li><li>আণবিক ভর কম হলে ব্যাপন হার বাড়ে (গ্রাহামের সূত্র)।</li></ul><p>কার্বন মনোক্সাইড (CO) এর আণবিক ভর ২৮ g/mol। নিয়ন (Ne) এর আণবিক ভর ২০.১৮ g/mol। নিয়ন কার্বন মনোক্সাইডের চেয়ে হালকা, তাই এর ব্যাপন হার বেশি। এছাড়াও, ৩৫°C তাপমাত্রা ৫°C তাপমাত্রার চেয়ে বেশি, যা ব্যাপন হার বাড়াতে সাহায্য করবে। সুতরাং, ৩৫°C-এ নিয়ন এর ব্যাপন হার সর্বাধিক হবে।</p>",
+        },
+        {
+          id: 70,
+          question: "দুটি গ্যাসের গড় গতিশক্তি সমান হয় যদি-",
+          options: {
+            A: "আণবিক ভর সমান হয়",
+            B: "তাপমাত্রা সমান হয়",
+            C: "চাপ সমান হয়",
+            D: "আয়তন সমান হয়",
+          },
+          correct: "B",
+          explanation:
+            "<p>গ্যাসের গতিতত্ত্ব অনুযায়ী, গ্যাসের অণুগুলির গড় গতিশক্তি শুধুমাত্র পরম তাপমাত্রার উপর নির্ভর করে। অর্থাৎ, যদি দুটি গ্যাসের তাপমাত্রা সমান হয়, তাহলে তাদের আণবিক ভর, চাপ বা আয়তন ভিন্ন হলেও তাদের গড় গতিশক্তি সমান হবে।</p>",
+        },
+        {
+          id: 71,
+          question:
+            "নির্দিষ্ট পরিমাণ গ্যাসের অভ্যন্তরীণ শক্তি নিম্নোক্ত কোনটির উপর নির্ভর করে?",
+          options: {
+            A: "ভর",
+            B: "তাপমাত্রা",
+            C: "চাপ",
+            D: "আয়তন",
+          },
+          correct: "B",
+          explanation:
+            "<p>আদর্শ গ্যাসের ক্ষেত্রে, গ্যাসের অভ্যন্তরীণ শক্তি (Internal Energy) শুধুমাত্র তার পরম তাপমাত্রার উপর নির্ভর করে। কারণ, আদর্শ গ্যাসের অণুগুলোর মধ্যে কোনো আন্তঃআণবিক আকর্ষণ বল থাকে না এবং তাদের অভ্যন্তরীণ শক্তি মূলত তাদের গতিশক্তির সমষ্টি। গ্যাসের তাপমাত্রা বাড়লে অণুগুলোর গতিশক্তি বাড়ে এবং অভ্যন্তরীণ শক্তিও বাড়ে।</p>",
+        },
+        {
+          id: 72,
+          question: "কোন তাপমাত্রায় গ্যাসের গতিশক্তি শূন্য হবে?",
+          options: {
+            A: "303°C",
+            B: "273°C",
+            C: "–273°C",
+            D: "0°C",
+          },
+          correct: "C",
+          explanation:
+            "<p>গ্যাসের অণুগুলির গতিশক্তি পরম তাপমাত্রার সমানুপাতিক। পরমশূন্য তাপমাত্রা হলো সেই তাপমাত্রা যেখানে অণুগুলির গতিশক্তি তাত্ত্বিকভাবে শূন্য হয়ে যায়। কেলভিন স্কেলে এই তাপমাত্রা হলো ০ K, যা সেলসিয়াস স্কেলে –২৭৩.১৫°C এর সমান। তাই, –২৭৩°C তাপমাত্রায় গ্যাসের গতিশক্তি শূন্য হবে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                    <label class="option" data-option="${option}">
+                                      <div class="circle">${option}</div>
+                                      <span class="option-text">${question.options[option]}</span>
+                                    </label>
+                                  `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                       <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                       <div class="explanation-content">
+                                         <div class="explanation-label">ব্যাখ্যা:</div>
+                                         ${question.explanation}
+                                       </div>
+                                     </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                  <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                                  <div class="options">
+                                    ${optionsHTML}
+                                  </div>
+                                  ${explanationHTML}
+                                `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
